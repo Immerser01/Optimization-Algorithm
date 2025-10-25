@@ -393,6 +393,7 @@ int main()
     // --- Step 1: Initialization ---
     int M; // Max iterations
     double eps1, eps2; // Termination parameters
+    double lambda = 1.0; // Marquardt's parameter, starts at 1.0
 
     cout<< "Enter number of variables (n): ";
     cin>> g_n;
@@ -423,7 +424,7 @@ int main()
     g_f_evals= 0;
     g_grad_evals= 0;
 
-    cout<< "\n--- Starting marquart's Method ---"<< endl;
+    cout<< "\n--- Starting Marquardt's Method (lambda starts at 1.0, doubles each iter) ---"<< endl;
     cout<< "Initial x^(0): ";
     printVector(g_current_x);
     cout<< endl;
@@ -446,20 +447,32 @@ int main()
             break;
         }
 
+        cout << "Using lambda = " << lambda << endl;
+
         // --- Step 4: Calculate Search Direction s^(k) ---
-        // s^(k) = -[H(x^k)]^-1 * grad(f(x^k))
+        // s^(k) = -[H(x^k) + lambda*I]^-1 * grad(f(x^k))
         
         vector<vector<double>> H_k= hessian_f(g_current_x);
-        vector<vector<double>> H_inv_k= invertMatrix(H_k);
-
-        if (H_inv_k.empty()) 
+        
+        // Create the modified Hessian: H_mod = H_k + lambda * I
+        vector<vector<double>> H_mod = H_k; // Start with H_k
+        for (int i = 0; i < g_n; i++) 
         {
-            cout<< "Failed to invert Hessian. Stopping."<< endl;
+            H_mod[i][i] += lambda; // Add lambda to the diagonal
+        }
+
+        // Invert the modified Hessian
+        vector<vector<double>> H_mod_inv_k = invertMatrix(H_mod);
+
+        if (H_mod_inv_k.empty()) 
+        {
+            cout<< "Failed to invert modified Hessian (H + lambda*I). Stopping."<< endl;
             break;
         }
 
-        vector<double> temp_s= matrixVectorMultiply(H_inv_k, grad_k);
-        g_current_s= scalarMultiply(-1.0, temp_s);
+        // s = -[H_mod]^-1 * grad
+        vector<double> temp_s = matrixVectorMultiply(H_mod_inv_k, grad_k);
+        g_current_s = scalarMultiply(-1.0, temp_s);
 
         // Normalize search direction (as per Phase-2 Questions PDF)
         double s_norm= vectorNorm(g_current_s);
@@ -514,6 +527,7 @@ int main()
         // --- Step 5 (cont.): Go to next iteration ---
         g_current_x= x_next;
         k++;
+        lambda *= 2.0; // Double lambda for the next iteration
     } // end while
 
     if (k>=M) 
