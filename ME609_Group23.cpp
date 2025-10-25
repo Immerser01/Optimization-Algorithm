@@ -164,15 +164,16 @@ vector<vector<double>> invertMatrix(vector<vector<double>> matrix)
 
 //--- Master Objective Function ---
 /**
- * @brief This is the ONLY function you need to edit.
+ * @brief This is the ONLY function you need to edit. 
  * Comment/uncomment the function you want to test.
  */
 double f(const vector<double>& x) 
 {
     g_f_evals++;
     
-    // --- Function 1: Sum Squares Function ---
-    // f(x) = sum(i * xi^2) for i = 1 to n
+    // --- Function 1: Sum Squares Function --- 
+    // f(x) = sum(i * xi^2) for i = 1 to d
+    // (ACTIVE BY DEFAULT)
     double sum= 0.0;
     for (int i=0; i<g_n; i++) 
     {
@@ -180,14 +181,45 @@ double f(const vector<double>& x)
     }
     return sum;
 
-    // --- Function 2: Rosenbrock Function ---
-    // f(x) = sum( 100*(x[i+1] - x[i]^2)^2 + (x[i] - 1)^2 ) for i = 0 to n-2
+    // --- Function 2: Rosenbrock Function --- 
+    // f(x) = sum( 100*(x[i+1] - x[i]^2)^2 + (x[i] - 1)^2 ) for i = 1 to d-1
     // double sum= 0.0;
     // for (int i=0; i<g_n-1; i++) 
     // {
     //     sum+= 100.0* pow(x[i+ 1]- x[i]* x[i], 2)+ pow(x[i]- 1.0, 2);
     // }
     // return sum;
+
+    // --- Function 3: Dixon-Price Function --- 
+    // f(x) = (x1-1)^2 + sum( i * (2*xi^2 - x(i-1))^2 ) for i = 2 to d
+    // double term1 = pow(x[0] - 1.0, 2);
+    // double sum = 0.0;
+    // for (int i = 1; i < g_n; i++) { // Loop from i=1 (maps to PDF's i=2)
+    //     sum += (i + 1) * pow(2.0 * x[i] * x[i] - x[i-1], 2);
+    // }
+    // return term1 + sum;
+
+    // --- Function 4: Trid Function --- 
+    // f(x) = sum( (xi-1)^2 ) for i=1 to d  -  sum( xi * x(i-1) ) for i=2 to d
+    // double sum1 = 0.0;
+    // for (int i = 0; i < g_n; i++) {
+    //     sum1 += pow(x[i] - 1.0, 2);
+    // }
+    // double sum2 = 0.0;
+    // for (int i = 1; i < g_n; i++) { // Loop from i=1 (maps to PDF's i=2)
+    //     sum2 += x[i] * x[i-1];
+    // }
+    // return sum1 - sum2;
+
+    // --- Function 5: Zakharov Function --- 
+    // f(x) = sum(xi^2) + (sum(0.5*i*xi))^2 + (sum(0.5*i*xi))^4 for i=1 to d
+    // double sum1 = 0.0;
+    // double inner_sum = 0.0;
+    // for (int i = 0; i < g_n; i++) {
+    //     sum1 += x[i] * x[i];
+    //     inner_sum += 0.5 * (i + 1) * x[i];
+    // }
+    // return sum1 + pow(inner_sum, 2) + pow(inner_sum, 4);
 }
 
 /**
@@ -399,9 +431,14 @@ int main()
     cin>> g_n;
 
     cout<< "Select objective function by editing 'f(x)' in the code."<< endl;
-    cout<< "Currently set to: Sum Squares Function (default)"<< endl;
+    cout<< "Functions available:" << endl;
+    cout<< " 1. Sum Squares Function (ACTIVE BY DEFAULT)" << endl;
+    cout<< " 2. Rosenbrock Function" << endl;
+    cout<< " 3. Dixon-Price Function" << endl;
+    cout<< " 4. Trid Function" << endl;
+    cout<< " 5. Zakharov Function" << endl;
 
-    cout<< "Enter max iterations (M): ";
+    cout<< "\nEnter max iterations (M): ";
     cin>> M;
     cout<< "Enter termination parameter epsilon_1: ";
     cin>> eps1;
@@ -416,7 +453,7 @@ int main()
     srand(static_cast<unsigned int>(time(NULL)));
     for (int i=0; i<g_n; i++) 
     {
-        // Range [-5, 5] (a reasonable default)
+        // Range [-5, 5] (a reasonable default based on PDFs) [cite: 53, 91]
         g_current_x[i]= (static_cast<double>(rand())/ RAND_MAX)* 10.0- 5.0;
     }
 
@@ -474,7 +511,7 @@ int main()
         vector<double> temp_s = matrixVectorMultiply(H_mod_inv_k, grad_k);
         g_current_s = scalarMultiply(-1.0, temp_s);
 
-        // Normalize search direction (as per Phase-2 Questions PDF)
+        // Normalize search direction [cite: 11]
         double s_norm= vectorNorm(g_current_s);
         if (s_norm>1e-12) 
         { // Avoid division by zero
@@ -485,14 +522,14 @@ int main()
         printVector(g_current_s);
         cout<< endl;
 
-        // --- Step 4 (cont.): Perform Unidirectional Search for alpha^(k) ---
+        // --- Step 4 (cont.): Perform Unidirectional Search for alpha^(k) --- [cite: 10, 15]
         // We need to find alpha that minimizes g(alpha) = f(x^k + alpha * s^k)
         
-        // 1. Bounding Phase
+        // 1. Bounding Phase [cite: 16]
         // Initial guess for alpha = 0, delta = 0.1 (can be tuned)
         pair<double, double> alpha_bounds= boundingPhaseStart(0.0, 0.1);
 
-        // 2. Bisection Method
+        // 2. Bisection Method [cite: 16]
         // Set up globals for bisection
         g_BM1= derivativeFunction_1D(alpha_bounds.first);
         g_BM2= derivativeFunction_1D(alpha_bounds.second);
