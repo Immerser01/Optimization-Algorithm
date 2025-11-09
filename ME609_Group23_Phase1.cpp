@@ -47,31 +47,8 @@ double objectiveFunction(int num, double value)
 double deriavativeFunction(int num, double value)
 {
 	//Deriavative of the objective functions, i.e. deriavative functions
-	double temp=0.0;
-	if (num==0)
-	{
-		temp= 3*pow(value*value-1,2)*2*value - 4*pow(2*value-5,3)*2;
-	}
-	if (num==1)
-	{
-		temp= exp(value)*2 + 2 - 3*pow(value,2);
-	}
-	if (num==2)
-	{
-		temp= (-1)*4*sin(value)+(-1)*4*value*cos(value);
-	}
-	if (num==3)
-	{
-		temp= exp(0.50*value*value)*value + 4*(value-3);
-	}
-	if (num==4)
-	{
-		temp= value*2 - exp(0.10*value);
-	}
-	if (num==5)
-	{
-		temp= 30*value -20*cos(value);
-	}
+	double temp=objectiveFunction(num,value+eps)-objectiveFunction(num,value);
+	temp/=eps;
 	return temp;
 }
 bool checkRange(int num, double iG, double delta)
@@ -220,3 +197,4 @@ int main()
 	//Can be used to take input, give output or both in a file
 	solve();
 }
+
