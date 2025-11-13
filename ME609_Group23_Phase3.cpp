@@ -1,18 +1,5 @@
 #include <bits/stdc++.h>
-#include <vector>
-#include <cmath>
-#include <iostream>
-#include <iomanip>
-#include <numeric> // For iota, accumulate
-#include <algorithm> // For min, max, sort
-// Removed <fstream> - no longer printing to file
-
 using namespace std;
-
-//---------------------------------------------------------------------------------
-// GLOBAL VARIABLES
-//---------------------------------------------------------------------------------
-
 // --- 1D Search & Function Pointers ---
 double (*g_objectiveFunction)(double alpha);
 double (*g_derivativeFunction)(double alpha);
@@ -81,10 +68,6 @@ void printVector(const vector<double>& v)
     }
     cout << "]";
 }
-
-/**
- * @brief Calculates the L2 norm (magnitude) of a vector.
- */
 double vectorNorm(const vector<double>& v) 
 {
     double sum = 0.0;
@@ -94,10 +77,6 @@ double vectorNorm(const vector<double>& v)
     }
     return sqrt(sum);
 }
-
-/**
- * @brief Adds two vectors: a + b
- */
 vector<double> vectorAdd(const vector<double>& a, const vector<double>& b) 
 {
     vector<double> result(g_n);
@@ -107,10 +86,6 @@ vector<double> vectorAdd(const vector<double>& a, const vector<double>& b)
     }
     return result;
 }
-
-/**
- * @brief Subtracts two vectors: a - b
- */
 vector<double> vectorSubtract(const vector<double>& a, const vector<double>& b) 
 {
     vector<double> result(g_n);
@@ -120,10 +95,6 @@ vector<double> vectorSubtract(const vector<double>& a, const vector<double>& b)
     }
     return result;
 }
-
-/**
- * @brief Multiplies a vector by a scalar: c * v
- */
 vector<double> scalarMultiply(double c, const vector<double>& v) 
 {
     vector<double> result(g_n);
@@ -133,10 +104,6 @@ vector<double> scalarMultiply(double c, const vector<double>& v)
     }
     return result;
 }
-
-/**
- * @brief Calculates the dot product of two vectors: a . b
- */
 double dotProduct(const vector<double>& a, const vector<double>& b) 
 {
     double sum = 0.0;
@@ -146,10 +113,6 @@ double dotProduct(const vector<double>& a, const vector<double>& b)
     }
     return sum;
 }
-
-/**
- * @brief Multiplies a matrix by a vector: M * v
- */
 vector<double> matrixVectorMultiply(const vector<vector<double>>& matrix, const vector<double>& vec) 
 {
     int n = vec.size();
@@ -163,11 +126,6 @@ vector<double> matrixVectorMultiply(const vector<vector<double>>& matrix, const 
     }
     return result;
 }
-
-/**
- * @brief Inverts an N x N matrix using Gaussian elimination.
- * (Unchanged from original file)
- */
 vector<vector<double>> invertMatrix(vector<vector<double>> matrix) 
 {
     int n = matrix.size();
@@ -236,9 +194,6 @@ vector<vector<double>> invertMatrix(vector<vector<double>> matrix)
 // PROBLEM DEFINITIONS (f_orig, g_constraints)
 //---------------------------------------------------------------------------------
 
-/**
- * @brief Calculates the ORIGINAL objective function f(x) (unpenalized).
- */
 double original_f(const vector<double>& x)
 {
     if (g_problem_choice == 1)
@@ -269,11 +224,6 @@ double original_f(const vector<double>& x)
     }
     return 0.0;
 }
-
-/**
- * @brief Calculates the value of a single constraint, g_j(x).
- * IMPORTANT: All constraints are converted to the form g_j(x) >= 0.
- */
 double g_constraint_j(const vector<double>& x, int j)
 {
     if (g_problem_choice == 1)
@@ -333,18 +283,9 @@ int get_num_constraints()
 // PENALIZED FUNCTION (f, grad_f, hessian_f)
 //---------------------------------------------------------------------------------
 
-/**
- * @brief This is the core of the penalty method.
- * This function calculates the *penalized* objective function P(x, R),
- * which is what the unconstrained Marquardt solver will minimize.
- *
- * P(x,R) = (f_orig / f_scale) + R * sum( <g_j(x)>^2 )
- */
 double f(const vector<double>& x) 
 {
     g_f_evals++;
-    
-    // 1. Calculate original objective value
     double f_orig = original_f(x);
     
     // --- FIX: Scale the original objective ---
@@ -353,8 +294,6 @@ double f(const vector<double>& x)
     // 2. Calculate penalty term
     double penalty_sum = 0.0;
     int num_constraints = get_num_constraints();
-    
-    // --- FIX: Scaling factors for Problem 3 constraints ---
     vector<double> scales(num_constraints, 1.0);
     if (g_problem_choice == 3) {
         scales[0] = 1.0;
@@ -369,21 +308,13 @@ double f(const vector<double>& x)
     {
         double g_j = g_constraint_j(x, j);
 
-        // This is the Bracket-Operator <g_j(x)>
         double violation = max(0.0, -g_j);
         
-        // Add the scaled violation to the sum
         penalty_sum += pow(violation / scales[j], 2);
     }
-    
-    // 3. Return penalized function
-    // P(x,R) = (f_orig / f_scale) + R * (scaled_penalty_sum)
     return f_scaled + g_R * penalty_sum;
 }
 
-/**
- * @brief Numerically calculates the gradient of f(x) (the penalized function).
- */
 vector<double> numerical_gradient(const vector<double>& x) 
 {
     g_grad_evals++;
@@ -401,9 +332,6 @@ vector<double> numerical_gradient(const vector<double>& x)
     return grad;
 }
 
-/**
- * @brief Numerically calculates the Hessian of f(x) (the penalized function).
- */
 vector<vector<double>> numerical_hessian(const vector<double>& x) 
 {
     vector<vector<double>> hessian(g_n, vector<double>(g_n));
@@ -569,15 +497,6 @@ pair<double, double> bisectionMethod(double x1, double x2)
 //---------------------------------------------------------------------------------
 // "INNER LOOP" - MARQUARDT SOLVER
 //---------------------------------------------------------------------------------
-
-/**
- * @brief Solves the unconstrained problem P(x, R) for a *fixed* R.
- * This is the "inner loop" of the SUMT.
- *
- * @param M Max iterations for this inner loop.
- * @param eps1 Termination tolerance for this inner loop.
- * @return True if converged, false if max iterations was hit.
- */
 bool marquardtOptimization(int M, double eps1) 
 {
     // --- Initialization for the optimization process ---
@@ -590,21 +509,16 @@ bool marquardtOptimization(int M, double eps1)
     while (k < M) 
     {
         bool restart_triggered = false; 
-        bool descent_recalc = false; // Flag for robust descent check
+        bool descent_recalc = false;
 
-        // Calculate Gradient ---
         vector<double> grad_k = grad_f(g_current_x);
         double grad_norm = vectorNorm(grad_k);
-        
-        // Check Termination (Gradient) ---
         if (grad_norm <= eps1) 
         {
-            return true; // Converged
+            return true;
         }
 
-        double s_norm = 0.0; // Declare here so it's in scope for linear check
-
-        // --- Robust Descent Direction Loop ---
+        double s_norm = 0.0;
         while (true)
         {
             // s^(k) = -[H(x^k) + lambda*I]^-1 * grad(f(x^k))
@@ -630,12 +544,9 @@ bool marquardtOptimization(int M, double eps1)
                 }
                 continue; // Try again
             }
-
-            // s = -[H_mod]^-1 * grad
             vector<double> temp_s = matrixVectorMultiply(H_mod_inv_k, grad_k);
             g_current_s = scalarMultiply(-1.0, temp_s);
 
-            // Normalize search direction
             s_norm = vectorNorm(g_current_s);
             if (s_norm > 1e-12) 
             {
@@ -701,8 +612,6 @@ bool marquardtOptimization(int M, double eps1)
         double random_alpha_guess = (static_cast<double>(rand()) / RAND_MAX) * min(alpha_limit, 1.0);
 
         pair<double, double> alpha_bounds = boundingPhaseStart(random_alpha_guess, 0.1);
-
-        // --- NEW: Clamp the bounds to the feasible alpha_limit ---
         alpha_bounds.first = min(max(0.0, alpha_bounds.first), alpha_limit);
         alpha_bounds.second = min(max(0.0, alpha_bounds.second), alpha_limit);
         if (alpha_bounds.first > alpha_bounds.second) {
@@ -722,7 +631,7 @@ bool marquardtOptimization(int M, double eps1)
              pair<double, double> alpha_final_bounds = bisectionMethod(alpha_bounds.first, alpha_bounds.second);
              alpha_k = (alpha_final_bounds.first + alpha_final_bounds.second) / 2.0;
         } 
-        else // Invalid bracket, just pick the best of the bounds
+        else
         {
             alpha_k = (g_BM1 < g_BM2) ? alpha_bounds.first : alpha_bounds.second;
         }
@@ -745,28 +654,18 @@ bool marquardtOptimization(int M, double eps1)
             return true; // Converged
         }
 
-        // --- Go to next iteration ---
-        previous_s = g_current_s; // Save the current direction for the next check
+        previous_s = g_current_s;
         g_current_x = x_next;
         k++;
         
         if (!restart_triggered && !descent_recalc) 
         {
-            lambda /= 2.0; // Halve lambda if no issues
+            lambda /= 2.0;
         }
     } // end while
 
     return false; // Max iterations reached
 }
-
-//---------------------------------------------------------------------------------
-// "OUTER LOOP" - SUMT (Sequential Unconstrained Minimization)
-//---------------------------------------------------------------------------------
-
-/**
- * @brief Runs the full 10-run optimization, manages stats, and finds
- * the global minimum.
- */
 void runOptimizationRuns(int numRuns, int M_outer, double eps_overall, double R0, double c, int M_inner, double eps_inner)
 {
     cout << "\n--- Starting " << numRuns << " Optimization Runs ---" << endl;
@@ -790,7 +689,7 @@ void runOptimizationRuns(int numRuns, int M_outer, double eps_overall, double R0
         printVector(g_current_x);
         cout << endl;
 
-        // --- FIX: Set objective function scaling factor for this run ---
+        // Scaling Factor
         g_f_scale = 1.0; // Default
         if (g_problem_choice == 3) {
             double f_start = original_f(g_current_x);
@@ -899,20 +798,12 @@ void runOptimizationRuns(int numRuns, int M_outer, double eps_overall, double R0
 // MAIN FUNCTION
 //---------------------------------------------------------------------------------
 
-/**
- * @brief Sets up the console output formatting and random seed.
- */
 void setupEnvironment()
 {
     cout << fixed << setprecision(8);
     srand(static_cast<unsigned int>(time(NULL)));
 }
 
-/**
- * @brief Sets problem-specific globals (n, bounds) based on user choice.
- * @param problemChoice The problem (1, 2, or 3) to set up.
- * @return true if the choice was valid, false otherwise.
- */
 bool initializeProblem(int problemChoice)
 {
     g_problem_choice = problemChoice;
@@ -955,13 +846,11 @@ int main()
     cout << "Select problem (1, 2, or 3): ";
     cin >> problemChoice;
 
-    // --- Step 2: Set Problem-Specific Parameters (n, bounds) ---
     if (!initializeProblem(problemChoice))
     {
-        return 1; // Exit if problem choice is invalid
+        return 1;
     }
 
-    // --- Step 3: Get Algorithm Parameters ---
     int M_outer, M_inner;
     double eps_overall, eps_inner, eps_1D;
     double R0, c;
@@ -984,7 +873,6 @@ int main()
     cin >> eps_1D;
     g_eps = eps_1D; // Set global epsilon for bisection
 
-    // --- Step 4: Run Optimization (No file redirection) ---
     cout << "\n--- Starting Optimization for Problem " << g_problem_choice << " ---" << endl;
     cout << "Parameters Used:" << endl;
     cout << "  M_outer: " << M_outer << ", eps_overall: " << eps_overall << ", R0: " << R0 << ", c: " << c << endl;
@@ -992,8 +880,6 @@ int main()
     cout << "  Number of Runs: " << NUM_RUNS << endl;
     
     runOptimizationRuns(NUM_RUNS, M_outer, eps_overall, R0, c, M_inner, eps_inner);
-
-    // --- Step 5: Cleanup (No file cleanup needed) ---
     cout << "\n---" << endl;
     cout << "Optimization complete. All results are in the console above." << endl;
     
