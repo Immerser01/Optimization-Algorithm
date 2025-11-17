@@ -1,9 +1,3 @@
-/*
-Members:
-220122025, Divyansh Tiwari
-200101004, Abhinav Ayush
-*/
-
 #include<bits/stdc++.h>
 using namespace std;
 //-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -197,4 +191,5 @@ int main()
 	//Can be used to take input, give output or both in a file
 	solve();
 }
+
 
