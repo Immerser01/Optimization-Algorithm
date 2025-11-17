@@ -1,4 +1,4 @@
-# Finding Global Optima for Non-linear Constrained Problems
+# Global Optima for Non-linear Constrained Problems
 
 1) This algorithm uses Bracket Penalty Method and Damped Newton's Method for optima calculation.
 2) Damped Newton's Method has been slightly modified to use unidirectional search.
