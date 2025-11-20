@@ -11,4 +11,4 @@ Due to the use of hessian matrix in calculation of next optimal point in marquar
 # Details About Different Phases:
 1) Phase 1:  Algorithm for optimjzing single variable problems with only boxed constraints
 2) Phase 2:  Algorithm for optimizing multivariable problems with only boxed constraints
-3) Phase 3:  Algorithm for optimizing constrained non-Linear multivariable programming problems 
+3) Phase 3:  Algorithm for optimizing constrained nonlinear multivariable programming problems 
